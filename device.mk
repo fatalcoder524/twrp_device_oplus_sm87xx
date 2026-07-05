@@ -38,3 +38,23 @@ PRODUCT_EXTRA_RECOVERY_KEYS += \
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += $(DEVICE_PATH)
+
+# Base Manifests
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest.xml:recovery/root/vendor/etc/vintf/manifest.xml
+
+# VINTF Fragments
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.security.keymint-service-qti.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.security.keymint-service-qti.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service-qti.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service-qti.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.health-service.qti.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.health-service.qti.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.secure_element.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.secure_element.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml:recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml:recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml
+
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.gatekeeper-service-qti.rc:recovery/root/vendor/etc/init/android.hardware.gatekeeper-service-qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.security.keymint-service-qti.rc:recovery/root/vendor/etc/init/android.hardware.security.keymint-service-qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.secure_element-service.qti.rc:recovery/root/vendor/etc/init/android.hardware.secure_element-service.qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/qseecomd.rc:recovery/root/vendor/etc/init/qseecomd.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/ssgtzd.rc:recovery/root/vendor/etc/init/ssgtzd.rc
