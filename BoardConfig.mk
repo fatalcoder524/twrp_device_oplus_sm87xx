@@ -56,6 +56,9 @@ TARGET_BOOTLOADER_BOARD_NAME    := sun
 BOARD_USES_METADATA_PARTITION   := true
 TW_INCLUDE_CRYPTO               := true
 TW_INCLUDE_OMAPI                := true
+TW_INCLUDE_CRYPTO_FBE           := true
+TW_INCLUDE_FBE_METADATA_DECRYPT := true
+TW_FORCE_KEYMASTER_VER          := 4.1
 
 # Debug
 TARGET_USES_LOGD                := true
@@ -112,6 +115,18 @@ TW_INCLUDE_REPACKTOOLS        := true
 TW_INCLUDE_RESETPROP          := true
 TW_USE_TOOLBOX                := true
 TW_INCLUDE_ZSTD               := true
+
+# TWRP advanced features
+TW_INCLUDE_ADB_BACKUP       := true
+TW_INCLUDE_BLOBPACK         := true
+TW_INCLUDE_MTP              := true
+TW_INCLUDE_SELINUX          := true
+TW_INCLUDE_SEPOLICY         := true
+TW_INCLUDE_ZIP              := true
+TW_MTP_DEVICE               := "/dev/mtp_usb"
+TW_USE_NEW_MINADBD          := true
+TW_USE_SHA2                 := true
+TW_USE_TWTOOLS              := true
 
 # TWRP display
 TW_BRIGHTNESS_PATH      := /sys/class/backlight/panel0-backlight/brightness

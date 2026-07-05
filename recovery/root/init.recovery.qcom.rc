@@ -25,6 +25,12 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import /vendor/etc/init/android.hardware.gatekeeper-service-qti.rc
+import /vendor/etc/init/android.hardware.security.keymint-service-qti.rc
+import /vendor/etc/init/android.hardware.secure_element-service.qti.rc
+import /vendor/etc/init/qseecomd.rc
+import /vendor/etc/init/ssgtzd.rc
+
 on early-fs
     write /proc/sys/walt/sched_lib_name "recovery,Updater,updater,update_engine_sideload"
     write /proc/sys/walt/sched_lib_mask_force 255
@@ -35,11 +41,69 @@ service post-boot-script /system/bin/sh -c /vendor/bin/init.kernel.post_boot-sun
     oneshot
     seclabel u:r:recovery:s0
 
+on property:enable.qseecomd.service=1
+    wait /dev/block/bootdevice/by-name/modem
+    #mount vfat /dev/block/bootdevice/by-name/modem /firmware ro
+    start hwservicemanager
+
+on property:enable.qseecomd.service=0
+    stop hwservicemanager
+
+on init
+    start servicemanager
+
+service servicemanager /system/bin/servicemanager
+    user root
+    group root readproc
+    disabled
+    seclabel u:r:recovery:s0
+
+on init
+    start hwservicemanager
+
+service hwservicemanager /system/bin/hwservicemanager
+    user root
+    group root
+    onrestart setprop hwservicemanager.ready false
+    disabled
+    seclabel u:r:recovery:s0
+
+on init
+    start vndservicemanager
+
+service vndservicemanager /system/bin/vndservicemanager /dev/vndbinder
+    disabled
+    user root
+    group root readproc
+    writepid /dev/cpuset/system-background/tasks
+    shutdown critical
+    seclabel u:r:recovery:s0
+
+on late-init
+    start keystore2
+
+service keystore2 /system/bin/keystore2 /tmp/misc/keystore
+    class early_hal
+    user root
+    group keystore readproc log
+    writepid /dev/cpuset/foreground/tasks
+    seclabel u:r:recovery:s0
+
+service twrp-decrypt-prereqs /system/bin/twrp-decrypt-prereqs
+    user root
+    group root system drmrpc
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
+
+on early-init
+    start vendor.gatekeeper_default
+
 on init
     setprop sys.usb.configfs 1
     setprop prepdecrypt.setpatch true
     start vendor.boot-qti
-    start vendor.gatekeeper_default
+    start vendor.qseecomd
 
 on property:ro.boot.usbcontroller=*
     setprop sys.usb.controller ${ro.boot.usbcontroller}
@@ -65,13 +129,40 @@ on property:twrp.modules.loaded=true
     umount /vendor
     symlink /firmware /vendor/firmware_mnt
     start vendor.oplus.vibrator
-    trigger twrp_secure_element
 
-on twrp_secure_element && property:twrp.se.no_sb=false
+on property:ro.crypto.state=encrypted && property:ro.boot.dynamic_partitions=true
+    setprop twrp.decrypt.prereq preparing
+    start twrp-decrypt-prereqs
+
+on property:twrp.decrypt.prereq=ready
+    start prepdecrypt.vendor
+
+on property:hwservicemanager.ready=true
+    setprop sys.boot_completed 1
+
+on property:vendor.sys.listeners.registered=true
+    start vendor.ssgtzd
+
+on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=false
     enable vendor.keymint-strongbox
     enable vendor.weaver_nxp
     enable vendor.secure_element
 
-on property:vendor.sys.listeners.registered=true
-    setprop sys.boot_completed 1
-    start vendor.ssgtzd
+on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=false
+    enable vendor.keymint-strongbox
+    enable vendor.weaver_nxp
+    enable vendor.secure_element
+
+on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=true
+    enable vendor.keymint-qti
+
+on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=true
+    enable vendor.keymint-qti
+
+on property:twrp.all.users.decrypted=true
+    stop vendor.keymint-qti
+    stop vendor.gatekeeper_default
+    stop vendor.qseecomd
+    stop vendor.keymint-strongbox
+    stop vendor.weaver_nxp
+    stop vendor.secure_element
