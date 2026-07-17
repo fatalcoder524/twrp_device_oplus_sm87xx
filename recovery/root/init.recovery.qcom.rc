@@ -25,9 +25,6 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-on early-init
-    start vendor.gatekeeper_default
-
 on early-fs
     write /proc/sys/walt/sched_lib_name "recovery,Updater,updater,update_engine_sideload"
     write /proc/sys/walt/sched_lib_mask_force 255
@@ -75,9 +72,6 @@ on property:twrp.modules.loaded=true
 on property:ro.crypto.state=encrypted && property:ro.boot.dynamic_partitions=true
     setprop twrp.decrypt.prereq preparing
     start twrp-decrypt-prereqs
-
-on property:twrp.decrypt.prereq=ready
-    start override-spl
 
 on property:hwservicemanager.ready=true
     setprop sys.boot_completed 1

@@ -286,30 +286,34 @@ mount_persist() {
 }
 
 set_status preparing
+
+# KeyMint and Keystore2 consume the OS version and security patch levels during
+# initialization. Apply the values from the installed system/vendor images
+# before starting either service.
+set_status applying-stock-properties
+start_service override-spl
+wait_property crypto.ready 1 30 || fail_prereq stock-properties-failed "stock security properties were not applied; not starting decrypt services"
+
 mount_persist || fail_prereq persist-mount-failed "persist mount setup failed; not starting decrypt services"
 
-# The NXP services reject requests while Android reports boot incomplete.
-setprop sys.boot_completed 1 2>/dev/null || true
-wait_property sys.boot_completed 1 5 || log_msg "sys.boot_completed did not settle"
-
-# The secure-element HAL requires the Qualcomm secure channel and the NXP NFC
-# device. Older successful boots loaded nxp-nci before the HAL initialized;
-# current vendor init can start the HAL before that device is ready.
-set_status preparing-nfc
 start_service vendor.qseecomd
 wait_service_running vendor.qseecomd 20 || fail_prereq qseecomd-failed "vendor.qseecomd did not become ready"
-start_service vendor.ssgtzd
-wait_service_running vendor.ssgtzd 20 || true
-
-if [ ! -e "$NFC_DEVICE" ]; then
-    load_module_if_available smcinvoke_dlkm.ko || true
-    load_module_if_available nxp-nci.ko || true
-fi
-
-wait_path "$NFC_DEVICE" 20 || fail_prereq nfc-device-missing "$NFC_DEVICE did not appear; cannot initialize the embedded secure element"
-log_msg "NFC secure-element device ready: $NFC_DEVICE"
 
 if [ "$(getprop twrp.se.no_sb)" = "false" ]; then
+    # StrongBox devices require the NXP secure-element and OMAPI stack. Keep
+    # this path isolated so non-StrongBox devices do not depend on NFC.
+    set_status preparing-nfc
+    start_service vendor.ssgtzd
+    wait_service_running vendor.ssgtzd 20 || true
+
+    if [ ! -e "$NFC_DEVICE" ]; then
+        load_module_if_available smcinvoke_dlkm.ko || true
+        load_module_if_available nxp-nci.ko || true
+    fi
+
+    wait_path "$NFC_DEVICE" 20 || fail_prereq nfc-device-missing "$NFC_DEVICE did not appear; cannot initialize the embedded secure element"
+    log_msg "NFC secure-element device ready: $NFC_DEVICE"
+
     # Both daemons may already be running with a cached failed eSE probe. Stop the
     # OMAPI client first, then reinitialize the HAL after persist/QSEE/NFC readiness.
     set_status restarting-secure-element
