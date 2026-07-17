@@ -38,3 +38,35 @@ PRODUCT_EXTRA_RECOVERY_KEYS += \
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += $(DEVICE_PATH)
+
+# Base Manifests
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest.xml:recovery/root/vendor/etc/vintf/manifest.xml
+
+# VINTF Fragments
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.security.keymint-service-qti.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.security.keymint-service-qti.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.health-service.qti.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.health-service.qti.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/android.hardware.secure_element.xml:recovery/root/vendor/etc/vintf/manifest/android.hardware.secure_element.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml:recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml:recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml
+
+# Keystore2 Configs
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/system/etc/vintf/manifest/android.system.keystore2-service.xml:recovery/root/system/etc/vintf/manifest/android.system.keystore2-service.xml
+
+# System Init Scripts
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/system/etc/init/keystore2.rc:recovery/root/system/etc/init/keystore2.rc \
+    $(DEVICE_PATH)/recovery/root/system/etc/init/se_omapi.rc:recovery/root/system/etc/init/se_omapi.rc
+
+# Vendor Crypto Init Scripts
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.boot-service.qti.rc:recovery/root/vendor/etc/init/android.hardware.boot-service.qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.gatekeeper-service-qti.rc:recovery/root/vendor/etc/init/android.hardware.gatekeeper-service-qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.health-service.qti.rc:recovery/root/vendor/etc/init/android.hardware.health-service.qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.security.keymint-service-qti.rc:recovery/root/vendor/etc/init/android.hardware.security.keymint-service-qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/android.hardware.secure_element-service.qti.rc:recovery/root/vendor/etc/init/android.hardware.secure_element-service.qti.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/override-spl.rc:recovery/root/vendor/etc/init/override-spl.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/qseecomd.rc:recovery/root/vendor/etc/init/qseecomd.rc \
+    $(DEVICE_PATH)/recovery/root/vendor/etc/init/ssgtzd.rc:recovery/root/vendor/etc/init/ssgtzd.rc
