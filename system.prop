@@ -3,3 +3,6 @@ ro.charger.enable_suspend=true
 
 # FUSE passthrough
 persist.sys.fuse.passthrough.enable=true
+
+# Force Keymaster version
+keymaster_ver=4.1
