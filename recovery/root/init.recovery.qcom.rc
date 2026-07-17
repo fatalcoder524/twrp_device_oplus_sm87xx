@@ -72,6 +72,9 @@ on property:twrp.modules.loaded=true
     start vendor.health-default
     mount --bind /firmware /vendor/firmware_mnt
 
+on property:ro.crypto.state=encrypted && property:ro.crypto.type=file
+    install_keyring
+
 on property:ro.crypto.state=encrypted && property:ro.boot.dynamic_partitions=true
     setprop twrp.decrypt.prereq preparing
     start twrp-decrypt-prereqs
