@@ -25,6 +25,9 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+on early-init
+    start vendor.gatekeeper_default
+
 on early-fs
     write /proc/sys/walt/sched_lib_name "recovery,Updater,updater,update_engine_sideload"
     write /proc/sys/walt/sched_lib_mask_force 255
@@ -35,11 +38,17 @@ service post-boot-script /system/bin/sh -c /vendor/bin/init.kernel.post_boot-sun
     oneshot
     seclabel u:r:recovery:s0
 
+service twrp-decrypt-prereqs /system/bin/twrp-decrypt-prereqs
+    user root
+    group root system drmrpc
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
+
 on init
     setprop sys.usb.configfs 1
     setprop prepdecrypt.setpatch true
     start vendor.boot-qti
-    start vendor.gatekeeper_default
 
 on property:ro.boot.usbcontroller=*
     setprop sys.usb.controller ${ro.boot.usbcontroller}
@@ -61,17 +70,31 @@ on property:twrp.modules.loaded=true
     write /sys/kernel/boot_adsp/ssr 1
     wait /sys/class/power_supply/battery
     start vendor.health-default
-    start override-spl
     umount /vendor
     symlink /firmware /vendor/firmware_mnt
-    start vendor.oplus.vibrator
-    trigger twrp_secure_element
 
-on twrp_secure_element && property:twrp.se.no_sb=false
-    enable vendor.keymint-strongbox
-    enable vendor.weaver_nxp
-    enable vendor.secure_element
+on property:ro.crypto.state=encrypted && property:ro.boot.dynamic_partitions=true
+    setprop twrp.decrypt.prereq preparing
+    start twrp-decrypt-prereqs
+
+on property:twrp.decrypt.prereq=ready
+    start override-spl
+
+on property:hwservicemanager.ready=true
+    setprop sys.boot_completed 1
 
 on property:vendor.sys.listeners.registered=true
-    setprop sys.boot_completed 1
     start vendor.ssgtzd
+    start vendor.oplus.vibrator
+
+on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=false
+    start vendor.keymint-strongbox
+
+on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=false
+    start vendor.keymint-strongbox
+
+on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=true
+    start vendor.keymint-qti
+
+on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=true
+    start vendor.keymint-qti
