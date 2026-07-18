@@ -51,13 +51,8 @@ PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml:recovery/root/vendor/etc/vintf/manifest/vendor.qti.hardware.qseecom@1.0-service.xml \
     $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml:recovery/root/vendor/etc/vintf/manifest/boot-service.qti.xml
 
-# Keystore2 Configs
-PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/recovery/root/system/etc/vintf/manifest/android.system.keystore2-service.xml:recovery/root/system/etc/vintf/manifest/android.system.keystore2-service.xml
-
 # System Init Scripts
 PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/recovery/root/system/etc/init/keystore2.rc:recovery/root/system/etc/init/keystore2.rc \
     $(DEVICE_PATH)/recovery/root/system/etc/init/se_omapi.rc:recovery/root/system/etc/init/se_omapi.rc
 
 # Vendor Crypto Init Scripts

@@ -79,15 +79,3 @@ on property:hwservicemanager.ready=true
 on property:vendor.sys.listeners.registered=true
     start vendor.ssgtzd
     start vendor.oplus.vibrator
-
-on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=false
-    start vendor.keymint-strongbox
-
-on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=false
-    start vendor.keymint-strongbox
-
-on property:twrp.user.0.decrypt=1 && property:twrp.se.no_sb=true
-    start vendor.keymint-qti
-
-on property:ro.crypto.state=unencrypted && property:twrp.se.no_sb=true
-    start vendor.keymint-qti

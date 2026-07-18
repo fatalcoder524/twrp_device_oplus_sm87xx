@@ -7,9 +7,10 @@ MODULE_DIRS="/system/lib/modules /vendor/lib/modules /vendor_dlkm/lib/modules /l
 NFC_DEVICE="/dev/nq-nci"
 SECURE_ELEMENT_BINDER="android.hardware.secure_element.ISecureElement/eSE1"
 OMAPI_BINDER="android.se.omapi.ISecureElementService/default"
-CRYPTO_SERVICES="vendor.qseecomd vendor.gatekeeper_default vendor.keymint-qti keystore2"
 WEAVER_SERVICE="vendor.weaver_nxp"
-REQUIRED_BINDER_SERVICES="android.system.keystore2.IKeystoreService/default android.hardware.gatekeeper.IGatekeeper/default android.hardware.security.keymint.IKeyMintDevice/default"
+GATEKEEPER_BINDER_SERVICE="android.hardware.gatekeeper.IGatekeeper/default"
+KEYMINT_BINDER_SERVICE="android.hardware.security.keymint.IKeyMintDevice/default"
+KEYSTORE_BINDER_SERVICE="android.system.keystore2.IKeystoreService/default"
 WEAVER_BINDER_SERVICE="android.hardware.weaver.IWeaver/default"
 
 log_msg() {
@@ -179,8 +180,8 @@ binder_service_available() {
 
     if command -v service >/dev/null 2>&1; then
         out="$(service check "$name" 2>/dev/null || true)"
-        echo "$out" | grep -qi "found" && return 0
         echo "$out" | grep -qi "not found" && return 1
+        echo "$out" | grep -qi "found" && return 0
     fi
 
     # If the service command is not available in this recovery build, do not
@@ -287,9 +288,8 @@ mount_persist() {
 
 set_status preparing
 
-# KeyMint and Keystore2 consume the OS version and security patch levels during
-# initialization. Apply the values from the installed system/vendor images
-# before starting either service.
+# Apply the installed system/vendor OS version and security patch levels before
+# starting KeyMint. Keystore2 owns its own lifecycle and waits for its HALs.
 set_status applying-stock-properties
 start_service override-spl
 wait_property crypto.ready 1 30 || fail_prereq stock-properties-failed "stock security properties were not applied; not starting decrypt services"
@@ -335,38 +335,31 @@ if [ "$(getprop twrp.se.no_sb)" = "false" ]; then
     sleep 2
 fi
 
-set_status starting-crypto-services
-for svc in vendor.gatekeeper_default vendor.keymint-qti keystore2; do
-    start_service "$svc"
-done
+set_status starting-key-services
+setprop vendor.gatekeeper.is_security_level_spu 0 2>/dev/null || true
+wait_property vendor.gatekeeper.is_security_level_spu 0 5 || fail_prereq gatekeeper-selection-failed "Qualcomm Gatekeeper selection did not settle"
+start_service vendor.gatekeeper_default
+start_service vendor.keymint-qti
 
 if [ "$(getprop twrp.se.no_sb)" = "false" ]; then
     # Restart Weaver only after the refreshed eSE and OMAPI services are available.
     restart_service "$WEAVER_SERVICE"
 fi
 
-set_status waiting-init-services
-for svc in $CRYPTO_SERVICES; do
-    wait_service_running "$svc" 30 || true
-done
+set_status waiting-key-services
+wait_service_running vendor.gatekeeper_default 30 || fail_prereq gatekeeper-failed "vendor.gatekeeper_default did not become ready"
+wait_service_running vendor.keymint-qti 30 || fail_prereq keymint-failed "vendor.keymint-qti did not become ready"
+wait_binder_service "$GATEKEEPER_BINDER_SERVICE" 45 || fail_prereq gatekeeper-binder-failed "Gatekeeper binder service did not become ready"
+wait_binder_service "$KEYMINT_BINDER_SERVICE" 45 || fail_prereq keymint-binder-failed "KeyMint binder service did not become ready"
 
 if [ "$(getprop twrp.se.no_sb)" = "false" ]; then
-    wait_service_running "$WEAVER_SERVICE" 30 || true
+    wait_service_running "$WEAVER_SERVICE" 30 || fail_prereq weaver-failed "$WEAVER_SERVICE did not become ready"
+    wait_binder_service "$WEAVER_BINDER_SERVICE" 45 || fail_prereq weaver-binder-failed "Weaver binder service did not become ready"
 fi
 
-set_status waiting-binder-services
-missing_required=0
-for svc in $REQUIRED_BINDER_SERVICES; do
-    wait_binder_service "$svc" 45 || missing_required=1
-done
-
-if [ "$(getprop twrp.se.no_sb)" = "false" ]; then
-    wait_binder_service "$WEAVER_BINDER_SERVICE" 45 || missing_required=1
-fi
-
-if [ "$missing_required" -ne 0 ]; then
-    fail_prereq failed "required decrypt binder services are not ready; not starting prepdecrypt"
-fi
+set_status waiting-keystore
+wait_service_running keystore2 30 || fail_prereq keystore-failed "keystore2 did not become ready"
+wait_binder_service "$KEYSTORE_BINDER_SERVICE" 45 || fail_prereq keystore-binder-failed "Keystore2 binder service did not become ready"
 
 # Let the HALs settle after registration before prepdecrypt and PIN entry.
 sleep 2
