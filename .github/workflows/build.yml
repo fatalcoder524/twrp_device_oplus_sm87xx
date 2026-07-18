@@ -35,6 +35,10 @@ on:
         description: "Build partition"
         required: true
         default: "recovery"
+      DEBUG:
+        description: "Add Debug patches?"
+        required: false
+        default: "false"
       SHOULD_RELEASE:
         description: "Whether to create a release"
         required: false
@@ -127,6 +131,9 @@ jobs:
 
     - name: Build TWRP
       run: |
+        if [ ${{ github.event.inputs.DEBUG }} = "true" ]; then
+          curl -Ls https://raw.githubusercontent.com/fatalcoder524/kernel_patches_additional/refs/heads/main/0001-Add-logging-to-vold.patch | patch -p1
+        fi
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         export CCACHE_DIR=.ccache
